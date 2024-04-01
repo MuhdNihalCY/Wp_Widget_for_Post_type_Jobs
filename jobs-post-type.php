@@ -107,9 +107,7 @@ function job_application_form($content) {
                 <input type="hidden" name="action" value="submit_job_application">
                 <input type="submit" value="Submit Application">
             </form>
-            <div id="application_preview">
-                <h2>Application Preview</h2>
-            </div>
+            <div id="application_preview"> </div>
         </div>
         ';
         $content = $content . $form_html;
@@ -122,7 +120,6 @@ function styles_enqueuer() {
     $plugin_url = plugin_dir_url(__FILE__);
     wp_enqueue_style('style', $plugin_url . "/css/style.css");
 }
-
 add_action('init', 'styles_enqueuer');
 
 function script_enqueuer() {
@@ -130,13 +127,14 @@ function script_enqueuer() {
     wp_register_script("job-application", plugin_dir_url(__FILE__) . '/js/job-application.js', array('jquery'));
 
     // localize the script to your domain name, so that you can reference the url to admin-ajax.php file easily
-    wp_localize_script('job-application', 'myAjax', array('ajaxurl' => admin_url('admin-ajax.php')));
+    wp_localize_script('job-application', 'ajax_url', array('ajaxurl' => admin_url('admin-ajax.php')));
 
     // enqueue jQuery library and the script you registered above   
     wp_enqueue_script('jquery');
     wp_enqueue_script('job-application');
 }
 add_action('init', 'script_enqueuer');
+
 function submit_job_application() {
     // Retrieve form data
     $applicant_Name = isset($_POST['applicant_name']) ? sanitize_text_field($_POST['applicant_name']) : '';
@@ -150,20 +148,23 @@ function submit_job_application() {
         wp_die();
     }
 
-    // Store the application data
+    // get all job applications
     $job_applications = get_post_meta($jobId, 'job_applications', true);
-    $job_applications = array(
+    // If $job_applications is not an array or is empty, initialize it as an empty array
+    if (!is_array($job_applications)) {
+        $job_applications = array();
+    }
+
+    // Create a new job application array
+    $new_job_application = array(
         "applicant_Name" => $applicant_Name,
         "applicant_Email" => $applicant_Email,
-        "message" => $message
+        "message" => $message,
+        "ID" => $jobId
     );
 
+    $job_applications[] = $new_job_application;
     update_post_meta($jobId, "job_applications", $job_applications);
-
-    // ob_start();
-    // display_job_applications($jobId);
-    // $output = ob_get_contents();
-    // ob_end_clean();
 
     // return success response
     echo json_encode(
@@ -176,6 +177,81 @@ function submit_job_application() {
     );
     wp_die();
 }
+add_action('wp_ajax_submit_job_application', 'submit_job_application');
+add_action('wp_ajax_nopriv_submit_job_application', 'submit_job_application');
 
-add_action('wp_ajax_submit_job_application', 'submit_job_application'); // This is for authenticated users
-add_action('wp_ajax_noprivsubmit_job_application', 'submit_job_application'); // This is for unauthenticated users.
+function add_job_application_meta_box() {
+    add_meta_box(
+        'job_application_meta_box',
+        'Job Applications',
+        'render_job_application_meta_box',
+        'jobs',
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'add_job_application_meta_box');
+
+function render_job_application_meta_box($post) {
+    // Retrieve job applications
+    $job_applications = get_post_meta($post->ID, 'job_applications', true);
+    ?>
+    <div class="job-applications-container">
+        <?php if (!empty($job_applications)): ?>
+            <ul>
+                <?php foreach ($job_applications as $index => $application): ?>
+                    <li>
+                        <strong>Name:</strong>
+                        <?php echo esc_html($application['applicant_Name']); ?><br>
+                        <strong>Email:</strong>
+                        <?php echo esc_html($application['applicant_Email']); ?><br>
+                        <strong>Message:</strong>
+                        <?php echo esc_html($application['message']); ?><br>
+                        <input type="button" class="application_del_btn" data-job-id="<?php echo esc_html($post->ID); ?>"
+                            data-application-index="<?php echo esc_html($index); ?>"
+                            data-applicant-name="<?php echo esc_html($application['applicant_Name']); ?>"
+                            data-applicant-email="<?php echo esc_html($application['applicant_Email']); ?>" value="Delete">
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php else: ?>
+            <p>No applications submitted for this job yet.</p>
+        <?php endif; ?>
+    </div>
+    <?php
+}
+
+function delete_job_application() {
+    // Retrieve form data
+    $applicant_Name = isset($_POST['applicant_name']) ? sanitize_text_field($_POST['applicant_name']) : '';
+    $applicant_Email = isset($_POST['applicant_email']) ? sanitize_email($_POST['applicant_email']) : '';
+    $jobId = isset($_POST['job_id']) ? absint($_POST['job_id']) : 0;
+    $application_index = isset($_POST['application_index']) ? sanitize_text_field($_POST['application_index']) : '';
+
+    // Validate form data
+    if (empty($applicant_Name) || empty($applicant_Email) || empty($jobId)) {
+        echo json_encode(array('status' => 'error', 'message' => 'Invalid data'));
+        wp_die();
+    }
+
+    // get all job applications
+    $job_applications = get_post_meta($jobId, 'job_applications', true);
+    // Filter out applications with matching applicant name and email
+    $job_applications = array_filter($job_applications, function ($application) use ($applicant_Name, $applicant_Email) {
+        return $application['applicant_Name'] !== $applicant_Name || $application['applicant_Email'] !== $applicant_Email;
+    });
+
+    update_post_meta($jobId, "job_applications", $job_applications);
+
+    // return success response
+    echo json_encode(
+        array(
+            "status" => "success",
+            "applicant_Name" => $applicant_Name,
+            "applicant_Email" => $applicant_Email
+        )
+    );
+    wp_die();
+}
+add_action('wp_ajax_delete_job_application', 'delete_job_application');
+add_action('wp_ajax_nopriv_delete_job_application', 'delete_job_application');
