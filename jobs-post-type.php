@@ -129,8 +129,7 @@ function script_enqueuer() {
     // localize the script to your domain name, so that you can reference the url to admin-ajax.php file easily
     wp_localize_script('job-application', 'ajax_url', array('ajaxurl' => admin_url('admin-ajax.php')));
 
-    // enqueue jQuery library and the script you registered above   
-    wp_enqueue_script('jquery');
+    // enqueue the script registered above
     wp_enqueue_script('job-application');
 }
 add_action('init', 'script_enqueuer');
@@ -180,6 +179,7 @@ function submit_job_application() {
 add_action('wp_ajax_submit_job_application', 'submit_job_application');
 add_action('wp_ajax_nopriv_submit_job_application', 'submit_job_application');
 
+// admin list job applications in metabox
 function add_job_application_meta_box() {
     add_meta_box(
         'job_application_meta_box',
