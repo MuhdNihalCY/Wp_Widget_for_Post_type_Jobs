@@ -73,7 +73,7 @@ function submit_job_application()
     );
 
     // Insert the post into the database
-    $post_id = wp_insert_post($post_data);  
+    $post_id = wp_insert_post($post_data);
 
     // Handle post insertion result
     if ($post_id) {
@@ -86,14 +86,43 @@ function submit_job_application()
         update_post_meta($post_id, 'application_cover', $message);
         update_post_meta($post_id, 'post_type', 'jobs');
 
-        echo json_encode(
-            array(
-                "status" => "success",
-                "message" => $message,
-                "applicant_Name" => $applicant_Name,
-                "applicant_Email" => $applicant_Email,
+
+        // store applicant data
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'jm_applicants';
+        $date = date('Y-m-d H:i:s');
+        $job_name = get_the_title($jobId);
+
+        $query_result = $wpdb->query(
+            $wpdb->prepare(
+                "
+        INSERT INTO $table_name (`post_id`,`date`, `name`, `email`, `cover`, `job_id`, `job_name`, `status`)
+        VALUES (%s, %s, %s, %s, %s, %d, %s, %s)",
+                $post_id,
+                $date,
+                $applicant_Name,
+                $applicant_Email,
+                $message,
+                $jobId,
+                $job_name,
+                'pending'
             )
         );
+
+
+        if ($query_result !== false) {
+            echo json_encode(
+                array(
+                    "status" => "success",
+                    "message" => $message,
+                    "applicant_Name" => $applicant_Name,
+                    "applicant_Email" => $applicant_Email,
+                )
+            );
+        } else {
+            echo json_encode(array('status' => 'error', 'message' => 'Failed to submit application. Error: ' . $wpdb->last_error));
+        }
+
     } else {
         echo json_encode(array('status' => 'error', 'message' => 'Failed to submit application'));
     }
@@ -147,42 +176,3 @@ function hd_add_buttons()
     }
 }
 add_action('admin_head', 'hd_add_buttons');
-
-// function application_status_metabox()
-// {
-//     add_meta_box(
-//         'application_status',
-//         'Application Status',
-//         'render_application_status_metabox',
-//         'applicants',
-//         'side',
-//         'high'
-//     );
-// }
-// add_action('add_meta_boxes', 'application_status_metabox');
-
-/*
-function render_application_status_metabox($post)
-{
-
-    $input_data = get_post_meta($post->ID, 'application_status', true);
-     $checkbox_data = get_post_meta($post->ID, 'checkbox_value', true);
-
-    // nonce field for security
-    wp_nonce_field('custom_metabox_nonce', 'custom_metabox_nonce');
-
-    // display metabox content
-    ?>
-    <label>Status</label>
-    <select name="application_status">
-
-        <?php
-        foreach ($input_data as $key => $value) {
-            ?>
-            <option value="<?php echo esc_attr($key) ?>" <?php selected($key, $input_data) ?>>
-                <?php echo esc_html($value) ?>
-            </option>
-
-            <?php
-        }
-}*/
