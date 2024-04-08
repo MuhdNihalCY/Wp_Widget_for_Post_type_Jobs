@@ -74,6 +74,7 @@ function submit_job_application()
 
     // Insert the post into the database
     $post_id = wp_insert_post($post_data);
+    write_log("Create new application: " . $post_id);
 
     // Handle post insertion result
     if ($post_id) {
@@ -85,6 +86,8 @@ function submit_job_application()
         update_post_meta($post_id, 'application_status', 'pending');
         update_post_meta($post_id, 'application_cover', $message);
         update_post_meta($post_id, 'post_type', 'jobs');
+        update_post_meta($post_id, 'application_id', $post_id);
+
 
 
         // store applicant data
@@ -166,13 +169,80 @@ function action_custom_columns_content($column_id, $post_id)
 }
 
 // hide add new applicants
-function hd_add_buttons()
+// function hd_add_buttons()
+// {
+//     global $pagenow;
+//     if (is_admin()) {
+//         if ($_GET['post_type'] == 'applicants') {
+//             echo '<style>.page-title-action{display: none !important;}</style>';
+//         }
+//     }
+// }
+// add_action('admin_head', 'hd_add_buttons');
+
+
+add_action('updated_post_meta', 'update_application');
+
+function update_application($post_id)
 {
-    global $pagenow;
-    if (is_admin()) {
-        if ($_GET['post_type'] == 'applicants') {
-            echo '<style>.page-title-action{display: none !important;}</style>';
+    write_log("post ID: " . $post_id);
+
+    // $newStatus = $_POST['meta'];
+
+    if (isset($_POST['meta'])) {
+        // 'meta' key exists in $_POST
+        $meta_data = $_POST['meta'];
+
+
+        // Define variables to store values
+        $applicant_email = '';
+        $applicant_name = '';
+        $application_cover = '';
+        $application_status = '';
+        $application_id = '';
+
+        // Iterate over the array and assign values to variables
+        foreach ($meta_data as $meta_item) {
+            switch ($meta_item['key']) {
+                case 'applicant_email':
+                    $applicant_email = $meta_item['value'];
+                    break;
+                case 'applicant_name':
+                    $applicant_name = $meta_item['value'];
+                    break;
+                case 'application_cover':
+                    $application_cover = $meta_item['value'];
+                    break;
+                case 'application_status':
+                    $application_status = $meta_item['value'];
+                    break;
+                case 'application_id':
+                    $application_id = $meta_item['value'];
+                    break;
+            }
         }
+        // store applicant data
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'jm_applicants';
+        $update_query = "UPDATE `$table_name` SET `email`='$applicant_email', `name`= '$applicant_name', `cover`='$application_cover', `status`='$application_status' WHERE `post_id` = '$application_id'";
+        $wpdb->query($update_query);
+
+    } else {
+        // 'meta' key does not exist in $_POST
+        echo "No meta data found in the POST request.";
     }
 }
-add_action('admin_head', 'hd_add_buttons');
+
+add_action('wp_trash_post', 'application_delete');
+
+function application_delete()
+{
+    if (isset($_GET['post'])) {
+        $post_id = intval($_GET['post']);
+        write_log("Delete Application ID: " . $post_id);
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'jm_applicants';
+        $update_query = "DELETE FROM $table_name WHERE `post_id` = '$post_id'";
+        $wpdb->query($update_query);
+    }
+}
