@@ -43,7 +43,7 @@ class Latest_Jobs_Widget extends WP_Widget {
         parent::__construct(
             'latest_jobs_widget', // Base ID
             'Latest Jobs Widget',  // Name
-            array('description' => __('This is a WordPress plugin, where admins can post jobs, and the posted job can be retrieved in the latest jobs widget. Users can apply for the jobs that administer posted. Admins can edit and modify the job applications.','text-domain')) 
+            array('description' => __('A widget to display the latest jobs.','text-domain')) 
         );
     }
     // Widget content output

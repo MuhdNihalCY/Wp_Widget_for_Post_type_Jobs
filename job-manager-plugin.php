@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: Jobs Post_types
-Description: Create a custom job listing post type.
+Description: This is a WordPress plugin, where admins can post jobs, and the posted job can be retrieved in the latest jobs widget. Users can apply for the jobs that administer posted. Admins can edit and modify the job applications.
 Version: 1.0
 Author: Nihal
 */
