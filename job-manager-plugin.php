@@ -6,6 +6,11 @@ Version: 1.0
 Author: Nihal
 */
 
+// Exit if accessed directly.
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
 require_once plugin_dir_path( __FILE__ ) . 'jobs-post-type.php';
 require_once plugin_dir_path( __FILE__ ) . 'applicants-child-post-type.php';
 
@@ -32,10 +37,10 @@ function jm_activation() {
     ";
 
     require_once (ABSPATH . 'wp-admin/includes/upgrade.php');
-    $wpdb->query($sql);
+    dbDelta($sql);
 }
 
-function jm_deactivation() { }
+function jm_deactivation() {}
 
 function jm_uninstall() {
     global $wpdb;

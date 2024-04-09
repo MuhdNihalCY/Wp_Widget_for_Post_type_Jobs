@@ -1,7 +1,6 @@
 <?php
 
-function child_post_type_applicants()
-{
+function child_post_type_applicants() {
     $supports = array(
         // 'title',
         // 'editor',
@@ -38,8 +37,7 @@ function child_post_type_applicants()
 }
 add_action('init', 'child_post_type_applicants');
 
-function submit_job_application()
-{
+function submit_job_application() {
     // Retrieve form data
     $applicant_Name = isset($_POST['applicant_name']) ? sanitize_text_field($_POST['applicant_name']) : '';
     $applicant_Email = isset($_POST['applicant_email']) ? sanitize_email($_POST['applicant_email']) : '';
@@ -112,8 +110,7 @@ add_action('wp_ajax_nopriv_submit_job_application', 'submit_job_application');
 
 add_filter('manage_applicants_posts_columns', 'filter_cpt_columns');
 
-function filter_cpt_columns($columns)
-{
+function filter_cpt_columns($columns) {
     // this will add the column to the end of the array
     $columns['job_name'] = __('Applied Job');
     $columns['email'] = __('Email');
@@ -123,8 +120,7 @@ function filter_cpt_columns($columns)
 }
 
 add_action('manage_posts_custom_column', 'action_custom_columns_content', 10, 2);
-function action_custom_columns_content($column_name, $post_id)
-{
+function action_custom_columns_content($column_name, $post_id) {
     switch ($column_name) {
         case 'email':
             echo ($value = get_post_meta($post_id, 'applicant_email', true)) ? $value : '';
@@ -141,8 +137,7 @@ function action_custom_columns_content($column_name, $post_id)
 }
 
 add_action('updated_post_meta', 'update_application');
-function update_application()
-{
+function update_application() {
     // Verify nonce
     if (!isset($_POST['_wpnonce'])) {
         return;
@@ -193,8 +188,7 @@ function update_application()
 }
 
 add_action('wp_trash_post', 'application_delete');
-function application_delete($post_id)
-{
+function application_delete($post_id) {
     if (isset($_GET['post']) && wp_verify_nonce($_REQUEST['_wpnonce'], 'trash-post_' . $post_id)) {
         $post_id = intval($_GET['post']);
         global $wpdb;
