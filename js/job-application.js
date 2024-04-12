@@ -3,7 +3,7 @@ jQuery(document).ready(function ($) {
     $(document).on('submit', '.job-application-form', function (event) {
         event.preventDefault();
         var form = $(this);
-        var formData = form.serialize(); 
+        var formData = form.serialize();
         formData += '&action=submit_job_application'; 
 
         $.ajax({

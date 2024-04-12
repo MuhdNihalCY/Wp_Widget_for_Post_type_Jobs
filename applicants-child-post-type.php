@@ -83,10 +83,10 @@ function submit_job_application() {
 
         $query_result = $wpdb->query(
             $wpdb->prepare(
-                "
-        INSERT INTO $table_name (`post_id`,`date`, `name`, `email`, `cover`, `job_id`, `job_name`, `status`)
-        VALUES ('$post_id', '$date', '$applicant_Name', '$applicant_Email', '$message','$jobId','$job_name', 'pending')"
-        ));
+                "INSERT INTO $table_name (`post_id`,`date`, `name`, `email`, `cover`, `job_id`, `job_name`, `status`)
+                VALUES ('$post_id', '$date', '$applicant_Name', '$applicant_Email', '$message','$jobId','$job_name', 'pending')"
+            )
+        );
 
         if ($query_result !== false) {
             echo json_encode(
@@ -109,7 +109,6 @@ add_action('wp_ajax_submit_job_application', 'submit_job_application');
 add_action('wp_ajax_nopriv_submit_job_application', 'submit_job_application');
 
 add_filter('manage_applicants_posts_columns', 'filter_cpt_columns');
-
 function filter_cpt_columns($columns) {
     // this will add the column to the end of the array
     $columns['job_name'] = __('Applied Job');
@@ -131,9 +130,7 @@ function action_custom_columns_content($column_name, $post_id) {
         case 'application_status':
             echo ($value = get_post_meta($post_id, 'application_status', true)) ? $value : '';
             break;
-        default:
-            echo '';
-    }
+    }   
 }
 
 add_action('updated_post_meta', 'update_application');
